@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>K-12 MAP Growth Prep Simulator - Academy Professional</title>
+  <!-- Google Fonts Inter -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;850&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <main class="shell">
+    
+    <!-- Academy Header Tabs (Hidden during Print) -->
+    <header class="tabs screen-only">
+      <button class="tab-btn active" id="navTestBtn">Student Test Portal</button>
+      <button class="tab-btn" id="navDashboardBtn">Teacher Cohort Dashboard</button>
+    </header>
+
+    <!-- ==================== SCREEN 1: LANDING & SETUP ==================== -->
+    <section class="dashboard-card" id="landingScreen">
+      <div class="card-title-row">
+        <h2>K-12 Adaptive MAP Growth Prep Test</h2>
+        <span class="text-ok" style="font-size: 0.9rem; font-weight: 850;">Active Academy Mode</span>
+      </div>
+      
+      <p style="color: var(--muted); margin-bottom: 20px; line-height: 1.55;">
+        Welcome to the professional K-12 MAP Growth prep simulator. This portal supports a full school pathway with adaptive Grade 1-12 readiness checks, real-time Rasch ability calculations, lower-grade text-to-speech support, and print-ready Korean parent consultation reports.
+      </p>
+
+      <!-- Student Enrollment Profile Panel -->
+      <h3 style="color: var(--nwea-navy); margin-bottom: 12px;">1. Select or Enroll Student Profile</h3>
+      <div class="setup-grid" style="background: #FFFFFF; border: 1px solid var(--line); margin-bottom: 30px;">
+        <label style="flex: 1.5;">
+          Choose Active Student
+          <select id="studentProfileSelect">
+            <option value="">-- Choose Student Profile --</option>
+          </select>
+          <span class="sync-status" id="studentSyncStatus">Student directory loading...</span>
+        </label>
+        
+        <div style="display: flex; gap: 10px; flex: 2; align-items: flex-end; border-left: 1px solid var(--line); padding-left: 16px;">
+          <label style="flex: 1;">
+            New Student Name
+            <input type="text" id="newStudentName" placeholder="e.g. Minjun Kim">
+          </label>
+          <label style="width: 100px;">
+            Grade
+            <select id="newStudentGrade">
+              <option value="1">Grade 1</option>
+              <option value="2">Grade 2</option>
+              <option value="3">Grade 3</option>
+              <option value="4">Grade 4</option>
+              <option value="5">Grade 5</option>
+              <option value="6">Grade 6</option>
+              <option value="7">Grade 7</option>
+              <option value="8">Grade 8</option>
+              <option value="9">Grade 9</option>
+              <option value="10">Grade 10</option>
+              <option value="11">Grade 11</option>
+              <option value="12">Grade 12</option>
+            </select>
+          </label>
+          <label style="flex: 1;">
+            Class
+            <input type="text" id="newStudentClass" placeholder="e.g. Advanced A">
+          </label>
+          <button class="nwea-btn" id="addStudentBtn" type="button" style="min-height: 44px;">Enroll Student</button>
+        </div>
+      </div>
+
+      <!-- Test Configuration Panel -->
+      <h3 style="color: var(--nwea-navy); margin-bottom: 12px;">2. Configure Adaptive Prep Test</h3>
+      <div class="setup-grid">
+        <label>
+          K-12 Grade Level Target
+          <select id="testGradeSelect">
+            <option value="1">Grade 1</option>
+            <option value="2">Grade 2</option>
+            <option value="3" selected>Grade 3</option>
+            <option value="4">Grade 4</option>
+            <option value="5">Grade 5</option>
+            <option value="6">Grade 6</option>
+            <option value="7">Grade 7</option>
+            <option value="8">Grade 8</option>
+            <option value="9">Grade 9</option>
+            <option value="10">Grade 10</option>
+            <option value="11">Grade 11</option>
+            <option value="12">Grade 12</option>
+          </select>
+        </label>
+        <label>
+          Subject Area
+          <select id="testSubjectSelect">
+            <option value="math">Math (Adaptive)</option>
+            <option value="reading">Reading (Adaptive)</option>
+            <option value="language">Language Usage (Adaptive)</option>
+            <option value="science">Science (Adaptive)</option>
+            <option value="social">Social Studies (Adaptive)</option>
+          </select>
+        </label>
+        <label>
+          Testing Engine Mode
+          <select id="testLengthSelect">
+            <option value="auto">Rasch CAT Adaptive (G1=10, G2–12=40)</option>
+            <option value="10">Rasch CAT Adaptive (10 items)</option>
+            <option value="40">Rasch CAT Adaptive (40 items)</option>
+          </select>
+        </label>
+        <button class="nwea-btn" id="startTestBtn" style="min-height: 44px; width: 100%;">Start Test ➔</button>
+      </div>
+    </section>
+
+    <!-- ==================== SCREEN 2: HIGH-FIDELITY TESTING ==================== -->
+    <section id="testScreen" hidden>
+      
+      <!-- Top NWEA Slate Header -->
+      <div class="topbar">
+        <h1 class="topbar-title" id="testTitle">MAP Growth Test</h1>
+        <span class="topbar-progress" id="questionNum">Question 1</span>
+      </div>
+
+      <!-- NWEA Prep Interactive Toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <button class="tool-btn" id="toolZoomOut" title="Zoom Text Out">🔍- Zoom Out</button>
+          <button class="tool-btn" id="toolZoomIn" title="Zoom Text In">🔍+ Zoom In</button>
+        </div>
+        <div class="toolbar-group">
+          <button class="tool-btn" id="toolHighlighter" title="Highlight Selection">🖌️ Highlight Text</button>
+          <button class="tool-btn" id="toolEliminator" title="Strikethrough Answer Choice">❌ Answer Eliminator</button>
+          <button class="tool-btn" id="toolLineReader" title="Toggle Reading Focus Guide">📖 Line Reader</button>
+        </div>
+        <div class="toolbar-group">
+          <button class="tool-btn" id="toolCalculator" title="Calculator" disabled>🧮 Calculator</button>
+        </div>
+      </div>
+
+      <!-- Test Card Container -->
+      <div class="test-container">
+        
+        <!-- Badges Bar -->
+        <div class="badges">
+          <span class="badge" id="badgeDomain">Domain</span>
+          <span class="badge" id="badgeItemType">Question Type</span>
+          <span class="badge level" id="badgeDifficultyBand">Difficulty</span>
+          <span class="badge level" id="badgeRIT">RIT Difficulty</span>
+          <span class="badge calculator" id="badgeCalc" hidden>🧮 Calculator Active</span>
+        </div>
+
+        <!-- Line Reader Focus Guide Overlay (Dynamic absolute positioning) -->
+        <div class="line-reader-guide" id="lineReaderGuide" style="top: 180px;" hidden>
+          <div class="line-reader-mask"></div>
+          <div class="line-reader-slit" id="lineReaderSlit"></div>
+          <div class="line-reader-mask" style="flex-grow: 1;"></div>
+        </div>
+
+        <!-- Floating Draggable Calculator Widget -->
+        <div class="calc-container" id="calcContainer" hidden>
+          <div class="calc-header" id="calcHeader">
+            <span>NWEA Calculator</span>
+            <button class="calc-close-btn" id="calcCloseBtn">&times;</button>
+          </div>
+          <input type="text" class="calc-screen" id="calcScreen" value="0" readonly>
+          <div class="calc-grid">
+            <button class="calc-btn" data-val="C">C</button>
+            <button class="calc-btn" data-val="(">(</button>
+            <button class="calc-btn" data-val=")">)</button>
+            <button class="calc-btn op" data-val="÷">÷</button>
+            
+            <button class="calc-btn" data-val="7">7</button>
+            <button class="calc-btn" data-val="8">8</button>
+            <button class="calc-btn" data-val="9">9</button>
+            <button class="calc-btn op" data-val="x">x</button>
+            
+            <button class="calc-btn" data-val="4">4</button>
+            <button class="calc-btn" data-val="5">5</button>
+            <button class="calc-btn" data-val="6">6</button>
+            <button class="calc-btn op" data-val="-">-</button>
+            
+            <button class="calc-btn" data-val="1">1</button>
+            <button class="calc-btn" data-val="2">2</button>
+            <button class="calc-btn" data-val="3">3</button>
+            <button class="calc-btn op" data-val="+">+</button>
+            
+            <button class="calc-btn" data-val="0">0</button>
+            <button class="calc-btn" data-val=".">.</button>
+            <button class="calc-btn eq" data-val="=">=</button>
+          </div>
+        </div>
+
+        <!-- Question Body Area -->
+        <div class="question-area">
+          <button class="audio-speaker-btn" id="audioBtn" type="button" title="Speak Aloud Passage" hidden>🔊</button>
+          <div class="stimulus-box" id="stimulusText">Reading Passage / Expression Model...</div>
+          <h3 class="question-text" id="questionText">Question Prompt</h3>
+          
+          <!-- Choices Stack -->
+          <div class="choices-grid" id="choicesGrid"></div>
+        </div>
+
+        <div class="practice-feedback" id="practiceFeedback" hidden>
+          <strong id="practiceFeedbackTitle">연습 해설</strong>
+          <p id="practiceFeedbackText"></p>
+          <button class="nwea-btn" id="practiceContinueBtn" type="button">다음 문항 ➔</button>
+        </div>
+
+        <!-- Action Footer -->
+        <div class="submit-bar">
+          <button class="nwea-btn" id="nextBtn" disabled>Next Question ➔</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SCREEN 3: DIAGNOSTIC SCORE REPORT ==================== -->
+    <section class="dashboard-card print-container" id="resultsScreen" hidden>
+      
+      <!-- Report Header -->
+      <div class="card-title-row screen-only">
+        <h2>Assessment Summary & Diagnostics</h2>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="nwea-btn secondary" id="practiceStartBtn" hidden>약점 5문항 연습</button>
+          <button class="nwea-btn secondary" id="printReportBtn">🖨️ Print Parent Report</button>
+          <button class="nwea-btn" id="againBtn">Return Home ➔</button>
+        </div>
+      </div>
+
+      <!-- Quick Summary Stats Grid (Screen Only) -->
+      <div class="metrics-row screen-only">
+        <div class="metric-card" style="border-top: 4px solid var(--nwea-blue);">
+          <span>Adaptive RIT Rating</span>
+          <strong id="scoreRIT">0 RIT</strong>
+          <p>Rasch MLE estimated level</p>
+        </div>
+        <div class="metric-card" style="border-top: 4px solid var(--green);">
+          <span>시뮬레이터 퍼센타일</span>
+          <strong id="scorePercentile">0%</strong>
+          <p>자체 근사, NWEA 표 아님</p>
+        </div>
+        <div class="metric-card" style="border-top: 4px solid var(--amber);" style="grid-column: span 2;">
+          <span>Student Core Guidance</span>
+          <p id="scoreMessage" style="font-size: 0.88rem; line-height: 1.45; font-weight: 600; color: var(--ink); margin-top: 4px;"></p>
+        </div>
+      </div>
+
+      <!-- System Verification Metrics Check -->
+      <h3 class="screen-only" style="color: var(--nwea-navy); margin-bottom: 12px;">Test Validity Verification</h3>
+      <div class="metrics-row screen-only" id="qualityGrid"></div>
+
+      <div id="practiceSummary" class="practice-summary screen-only" hidden></div>
+
+      <!-- Dynamic A4 Parent Consultation Report Written In Korean -->
+      <div id="parentReport"></div>
+
+    </section>
+
+    <!-- ==================== SCREEN 4: TEACHER / COHORT DASHBOARD ==================== -->
+    <section class="dashboard-card" id="dashboardScreen" hidden>
+      <div class="card-title-row">
+        <h2>Teacher Cohort Dashboard</h2>
+        <button class="nwea-btn danger" id="clearHistoryBtn">⚠️ Clear History</button>
+      </div>
+
+      <p style="color: var(--muted); margin-bottom: 20px; line-height: 1.55;">
+        Search and select enrolled student profiles to analyze their RIT Growth Chart compared against NWEA US National Average norms. Access detailed attempt logs and print previous parent consultation reports instantly.
+      </p>
+
+      <!-- Student Selection Directory -->
+      <div class="setup-grid" style="background: #EAECEE; margin-bottom: 24px;">
+        <label style="flex: 2;">
+          Select Cohort Student Profile
+          <select id="dashStudentSelect">
+            <option value="">-- Select Student to View --</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="dashStudentInfo"></div>
+
+      <div class="weakness-grid" style="margin-top: 20px;">
+        <!-- SVGs Adaptive RIT Progress Line Charts -->
+        <div class="chart-container" style="background: #FFFFFF; height: 350px;">
+          <h4 style="margin: 0; font-size: 0.95rem; color: var(--nwea-navy); text-transform: uppercase;">RIT Growth Tracking Chart</h4>
+          <div id="dashChart" style="flex-grow: 1; height: 100%; display: flex; align-items: center; justify-content: center; position: relative;"></div>
+        </div>
+
+        <!-- Student attempts list logs -->
+        <div style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 6px; padding: 18px; display: flex; flex-direction: column;">
+          <h4 style="margin: 0 0 12px; font-size: 0.95rem; color: var(--nwea-navy); text-transform: uppercase;">Completed Attempt Log</h4>
+          <div class="table-wrap" style="flex-grow: 1; margin-bottom: 0;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Test ID</th>
+                  <th>Date</th>
+                  <th>Subject</th>
+                  <th>RIT Rating</th>
+                  <th>Percentile</th>
+                  <th>Accuracy</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="dashAttemptsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="data/question-bank.js"></script>
+  <script src="data/grade1-closeup-bank.js"></script>
+  <script src="data/grade2-3-closeup-bank.js"></script>
+  <script src="data/grade4-6-closeup-bank.js"></script>
+  <script src="data/grade4-5-visual-bank.js"></script>
+  <script src="data/grade6-visual-bank.js"></script>
+  <script src="data/grade7-bank.js"></script>
+  <script src="data/grade7-expanded-bank.js"></script>
+  <script src="data/grade8-bank.js"></script>
+  <script src="data/grade9-bank.js"></script>
+  <script src="data/grade7-9-closeup-bank.js"></script>
+  <script src="data/grade10-bank.js"></script>
+  <script src="data/grade11-bank.js"></script>
+  <script src="data/grade12-bank.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
