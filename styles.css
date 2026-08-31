@@ -880,3 +880,51 @@ tr:last-child td {
   color: var(--muted);
   margin-top: 4px;
 }
+
+
+.print-trouble-block {
+  margin: 0 0 24px;
+  padding: 18px;
+  background: #FFFFFF;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.trouble-meta {
+  font-size: 0.86rem;
+  color: var(--muted);
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+.trouble-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 800px) {
+  .trouble-grid { grid-template-columns: 1fr; }
+}
+.trouble-print-note {
+  margin-top: 14px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+@media print {
+  body.print-trouble-spots .dashboard-card {
+    display: block !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+  body.print-trouble-spots .dashboard-card > :not(.print-trouble-block) {
+    display: none !important;
+  }
+  body.print-trouble-spots .print-trouble-block {
+    display: block !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  body.print-trouble-spots .screen-only {
+    display: none !important;
+  }
+}

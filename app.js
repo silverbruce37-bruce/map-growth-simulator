@@ -207,7 +207,10 @@ const els = {
   dashStudentSelect: document.getElementById("dashStudentSelect"),
   dashStudentInfo: document.getElementById("dashStudentInfo"),
   dashChart: document.getElementById("dashChart"),
-  dashAttemptsTable: document.getElementById("dashAttemptsTable")
+  dashAttemptsTable: document.getElementById("dashAttemptsTable"),
+  cohortTroubleSpots: document.getElementById("cohortTroubleSpots"),
+  cohortTroubleBody: document.getElementById("cohortTroubleBody"),
+  printTroubleBtn: document.getElementById("printTroubleBtn")
 };
 
 // ==================== DRAGGABLE UTILITY ====================
@@ -1396,6 +1399,7 @@ function renderTeacherDashboard() {
   const history = loadHistory();
   
   populateStudentDropdowns();
+  renderCohortTroubleSpots(students, history);
   
   const selectedStudentId = els.dashStudentSelect.value;
   if (!selectedStudentId) {
@@ -1450,6 +1454,114 @@ function renderTeacherDashboard() {
   
   // Render SVG interactive Growth Chart
   renderGrowthChartSVG(studentHistory, student.grade);
+}
+
+function collectMissRows(attempts) {
+  const rows = [];
+  (attempts || []).forEach(att => {
+    (att.rows || []).forEach(row => {
+      if (row && row.isCorrect === false) {
+        rows.push({ ...row, attemptId: att.id, studentId: att.studentId, subject: att.subject });
+      }
+    });
+  });
+  return rows;
+}
+
+function topCounts(items, keyFn, limit = 3) {
+  const bag = {};
+  items.forEach(item => {
+    const key = keyFn(item);
+    if (!key) return;
+    if (!bag[key]) bag[key] = { key, count: 0, samples: [] };
+    bag[key].count += 1;
+    if (bag[key].samples.length < 3 && item.misconception) bag[key].samples.push(item.misconception);
+  });
+  return Object.values(bag).sort((a, b) => b.count - a.count).slice(0, limit);
+}
+
+function skillTroubleLabel(skillId) {
+  const notion = resolveNotionMicroskill(skillId);
+  const local = skillLabels[skillId] || skillId;
+  if (notion && !notion.fallback) {
+    return `${local} · ${notion.subject} / ${notion.skill} / ${notion.micro}`;
+  }
+  return local;
+}
+
+function renderCohortTroubleSpots(students, history) {
+  const body = els.cohortTroubleBody;
+  if (!body) return;
+
+  const roster = new Set((students || []).map(s => s.id));
+  const selectedId = els.dashStudentSelect?.value;
+  const selected = (students || []).find(s => s.id === selectedId);
+  const className = (selected?.className || "").trim();
+
+  let cohortStudents = students || [];
+  let scopeLabel = "등록된 전체 코호트";
+  if (className) {
+    cohortStudents = students.filter(s => (s.className || "").trim() === className);
+    scopeLabel = `반 ${className}`;
+  }
+
+  const cohortIds = new Set(cohortStudents.map(s => s.id));
+  const attempts = (history || []).filter(att => roster.has(att.studentId) && cohortIds.has(att.studentId));
+  const misses = collectMissRows(attempts);
+
+  if (!attempts.length) {
+    body.innerHTML = `<p class="trouble-meta">${escapeHTML(scopeLabel)} · 등록 학생 attempt 로그가 없습니다. 우리 뱅크 시험 기록만 집계합니다.</p>`;
+    return;
+  }
+
+  const skillTop = topCounts(misses, row => row.skillId, 3);
+  const typeTop = topCounts(misses, row => row.itemType || getItemTypeLabel(row), 3);
+  const dateLabel = new Date().toLocaleDateString();
+
+  const skillRows = skillTop.length
+    ? skillTop.map((s, i) => `<tr><td>${i + 1}</td><td>${escapeHTML(skillTroubleLabel(s.key))}</td><td>${s.count}</td></tr>`).join("")
+    : `<tr><td colspan="3">틀린 skillId가 없습니다.</td></tr>`;
+  const typeRows = typeTop.length
+    ? typeTop.map((t, i) => {
+        const hint = t.samples[0] ? `<br><span style="color:var(--muted);font-size:0.8rem;">${escapeHTML(t.samples[0])}</span>` : "";
+        return `<tr><td>${i + 1}</td><td>${escapeHTML(t.key)}${hint}</td><td>${t.count}</td></tr>`;
+      }).join("")
+    : `<tr><td colspan="3">틀린 문항유형이 없습니다.</td></tr>`;
+
+  body.innerHTML = `
+    <div class="parent-report-card" style="border: none; padding: 0; box-shadow: none;">
+      <div class="report-header">
+        <h3>캠프 교사용 Trouble Spots</h3>
+        <p>시뮬레이터 코호트 오답 집계 · ${escapeHTML(dateLabel)}</p>
+      </div>
+      <p class="trouble-meta">범위: ${escapeHTML(scopeLabel)} · 등록 학생 ${cohortStudents.length}명 · attempt ${attempts.length}건 · 오답 ${misses.length}문항. 우리 뱅크/로그만 사용. 공식 NWEA 표 아님.</p>
+      <div class="trouble-grid">
+        <div class="table-wrap" style="margin: 0;">
+          <table>
+            <thead><tr><th>#</th><th>가장 많이 틀린 skillId</th><th>오답 수</th></tr></thead>
+            <tbody>${skillRows}</tbody>
+          </table>
+        </div>
+        <div class="table-wrap" style="margin: 0;">
+          <table>
+            <thead><tr><th>#</th><th>문항유형 / misconception</th><th>오답 수</th></tr></thead>
+            <tbody>${typeRows}</tbody>
+          </table>
+        </div>
+      </div>
+      <p class="trouble-print-note">인쇄용 캠프 교사 블록입니다. StudyWise/IXL 카탈로그가 아니며, 이 시뮬레이터에 쌓인 응시 로그만 요약합니다.</p>
+    </div>
+  `;
+}
+
+function printCohortTroubleSpots() {
+  document.body.classList.add("print-trouble-spots");
+  const cleanup = () => {
+    document.body.classList.remove("print-trouble-spots");
+    window.removeEventListener("afterprint", cleanup);
+  };
+  window.addEventListener("afterprint", cleanup);
+  window.print();
 }
 
 function renderGrowthChartSVG(studentHistory, grade) {
@@ -1803,6 +1915,7 @@ function setupEventListeners() {
   
   // Dashboard Interactive Selector
   els.dashStudentSelect.addEventListener("change", renderTeacherDashboard);
+  if (els.printTroubleBtn) els.printTroubleBtn.addEventListener("click", printCohortTroubleSpots);
 }
 
 // Run initial configurations
