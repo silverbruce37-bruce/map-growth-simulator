@@ -264,8 +264,16 @@
       </div>
 
       <p style="color: var(--muted); margin-bottom: 20px; line-height: 1.55;">
-        Search and select enrolled student profiles to analyze their RIT Growth Chart compared against NWEA US National Average norms. Access detailed attempt logs and print previous parent consultation reports instantly.
+        등록 학생의 시뮬레이터 attempt 로그만 집계합니다. 공식 NWEA 표나 외부 스킬 카탈로그가 아닙니다.
       </p>
+
+      <div class="print-trouble-block print-container" id="cohortTroubleSpots">
+        <div class="card-title-row screen-only">
+          <h3 style="margin: 0; color: var(--nwea-navy);">Cohort Trouble Spots</h3>
+          <button class="nwea-btn secondary" id="printTroubleBtn" type="button">🖨️ 캠프 교사용 인쇄</button>
+        </div>
+        <div id="cohortTroubleBody"></div>
+      </div>
 
       <!-- Student Selection Directory -->
       <div class="setup-grid" style="background: #EAECEE; margin-bottom: 24px;">
