@@ -1033,14 +1033,14 @@ function renderScoreReport(attempt) {
 
   const cards = [];
   if (uniqueness != null) {
-    cards.push(`<div class="metric-card"><span>Item Uniqueness</span><strong>${uniqueness}%</strong><p>${uniqueness === 100 ? "이번 세트 문항 ID가 모두 다릅니다." : "같은 문항 ID가 반복되었습니다."}</p></div>`);
+    cards.push(window.Honesty.uniquenessCardHtml(uniqueness));
   }
   cards.push(`<div class="metric-card"><span>Exposure Quality</span><strong>${seenCount <= 2 ? "Excellent" : "Watch"}</strong><p>${seenCount} items seen in prior attempts.</p></div>`);
   if (highAccuracy != null) {
     cards.push(`<div class="metric-card"><span>High-RIT Accuracy</span><strong>${highAccuracy}%</strong><p>Performance on RIT 210+ items.</p></div>`);
   }
   if (se != null) {
-    cards.push(`<div class="metric-card"><span>Standard Error</span><strong>+/-${se} RIT</strong><p>Rasch 정보량으로 계산한 추정 오차입니다.</p></div>`);
+    cards.push(window.Honesty.uncertaintyCardHtml(se));
   }
   els.qualityGrid.innerHTML = cards.join("");
   
@@ -1102,7 +1102,8 @@ function generateKoreanReportCard(attempt) {
   
   // Weakness sorting (worst first)
   weaknessList.sort((a, b) => a.rate - b.rate);
-  const primaryWeak = weaknessList[0] || { label: "없음 (강점을 고루 유지 중)", key: "none" };
+  const allSkills = collectSkillStats(attempt.rows);
+  const strongSkills = allSkills.filter(s => s.rate >= 60).sort((a, b) => b.rate - a.rate).slice(0, 3);
 
   const typeStats = {};
   attempt.rows.forEach(r => {
@@ -1144,14 +1145,7 @@ function generateKoreanReportCard(attempt) {
         <td>${expected}<br><span class="muted-cell">오답 평균 난이도 약 ${wk.avgRit} RIT</span></td>
       </tr>
     `;
-  }).join("") : `
-    <tr>
-      <td><strong>1</strong></td>
-      <td><strong>전 영역 심화</strong><br><span class="muted-cell">뚜렷한 약점 유형 없음</span></td>
-      <td>1. Advanced/Killer 문항 재풀이<br>2. 풀이 근거를 말로 설명<br>3. 다른 표현의 parallel 문항 풀기<br>4. 시간 제한 적용</td>
-      <td>고난도 안정성과 속도 개선 예상</td>
-    </tr>
-  `;
+  }).join("") : Honesty.emptyProcessRowHtml();
 
   const predictionHtml = `
     <div class="metrics-row" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));">
@@ -1190,28 +1184,28 @@ function generateKoreanReportCard(attempt) {
     `;
   }).join("");
   
-  // Mini Day-by-Day lesson plan generator
+  // Mini Day-by-Day lesson plan from identified weak skills only
   let planHtml = "";
   const planSkills = weaknessList.slice(0, 3);
   if (planSkills.length === 0) {
-    // Fallback if student is perfect
-    planSkills.push({ label: "전 영역 심화", key: "geometry" });
-  }
-  
-  planSkills.forEach((wk, idx) => {
-    const playbookText = remediationPlaybook[wk.key] || "기존에 실수한 문항들의 해설을 정독하고 틀린 원인을 공책에 꼼꼼히 정리해 봅니다.";
-    planHtml += `
+    planHtml = `<p>${Honesty.escapeHTML(Honesty.remediationFallback())}</p>`;
+  } else {
+    planSkills.forEach((wk, idx) => {
+      const lesson = Honesty.remediationLesson(wk);
+      const playbookText = remediationPlaybook[wk.key] || lesson.masteryFallback;
+      planHtml += `
       <div class="program-card">
-        <h4>Day ${idx + 1} - ${wk.label} 강화 집중 세션</h4>
-        <p><strong>진단 지표:</strong> 정답률 ${wk.rate !== undefined ? wk.rate + "%" : "N/A"}의 취약 영역</p>
+        <h4>Day ${idx + 1} - ${Honesty.escapeHTML(lesson.title)}</h4>
+        <p><strong>진단 지표:</strong> ${Honesty.escapeHTML(lesson.diagnosis)}</p>
         <ul class="program-steps">
-          <li><strong>Mini Lesson:</strong> 과외식 개념 재정리 및 핵심 원리 구두 설명 유도.</li>
-          <li><strong>Guided Practice:</strong> 동급 RIT 수준의 parallel 문항 5문제를 교사와 소리 내어 풀이.</li>
-          <li><strong>Mastery Check:</strong> ${playbookText}</li>
+          <li><strong>Mini Lesson:</strong> ${Honesty.escapeHTML(lesson.miniLesson)}</li>
+          <li><strong>Guided Practice:</strong> ${Honesty.escapeHTML(lesson.guidedPractice)}</li>
+          <li><strong>Mastery Check:</strong> ${Honesty.escapeHTML(playbookText)}</li>
         </ul>
       </div>
     `;
-  });
+    });
+  }
   
   // Full report container inject
   els.parentReport.innerHTML = `
@@ -1230,8 +1224,8 @@ function generateKoreanReportCard(attempt) {
       
       <div class="report-section">
         <h4>1. 종합 성취도 분석 (Overall Performance)</h4>
-        <p>이번 적응형 진단 평가 결과, ${attempt.studentName} 학생의 최종 학력 지수는 <strong>${attempt.ritScore} RIT</strong>로 측정되었습니다. 시뮬레이터 퍼센타일 <strong>${attempt.percentile}%</strong>는 기준선 대비 RIT 차이를 이용한 <strong>자체 근사</strong>이며, <strong>공식 NWEA 표가 아닙니다</strong>.</p>
-        <p>학년 기준선은 ${attempt.baselineRIT ?? getBaselineRIT(attempt.subject, attempt.grade)} RIT입니다.${attempt.standardError != null ? " Rasch 정보량으로 계산한 추정 오차는 약 +/-" + attempt.standardError + " RIT입니다." : " 정보량이 부족해 표준오차는 표시하지 않습니다."}</p>
+        <p>${Honesty.percentileReportSentence(attempt.studentName, attempt.ritScore, attempt.percentile)}</p>
+        <p>학년 기준선은 ${attempt.baselineRIT ?? getBaselineRIT(attempt.subject, attempt.grade)} RIT입니다. ${Honesty.uncertaintyReportSentence(attempt.standardError)} ${Honesty.uniquenessReportSentence(attempt.uniquenessPct ?? computeUniquenessPct(attempt.rows))}</p>
       </div>
 
       <div class="report-section">
@@ -1294,8 +1288,8 @@ function generateKoreanReportCard(attempt) {
       
       <div class="report-section">
         <h4>4. 강점 및 우선 순위 약점 분석 (Strength & Areas to Develop)</h4>
-        <p><strong>💡 성취 강점 영역:</strong> 본 평가에서 높은 문항 정확도를 안정적으로 유지한 최상위 스킬은 지식의 견고함이 돋보입니다. 향후 해당 단원의 킬러 문항 처리를 안정화하는 고도화 트랙을 병행할 수 있습니다.</p>
-        <p><strong>⚠️ 집중 보완 약점 영역:</strong> 가장 집중적인 지도가 요청되는 단원은 <strong>'${primaryWeak.label}'</strong> 영역입니다. 개념 미스나 인지적 혼동 양상이 포착되었으며 아래 복습 강화 플랜을 우선 실행해야 합니다.</p>
+        <p><strong>💡 성취 강점 영역:</strong> ${Honesty.escapeHTML(Honesty.strengthGuidance(strongSkills))}</p>
+        <p><strong>⚠️ 집중 보완 약점 영역:</strong> ${Honesty.escapeHTML(Honesty.weaknessGuidance(weaknessList))}</p>
       </div>
 
       <div class="report-section">
@@ -1327,7 +1321,7 @@ function generateKoreanReportCard(attempt) {
       </div>
       
       <div class="report-section" style="border-top: 1px dashed var(--line); padding-top: 15px;">
-        <p style="font-size: 0.82rem; color: var(--muted); text-align: center;">본 리포트는 NWEA MAP Growth 평가의 실질적 대비를 위해 특수 고안된 준비 시뮬레이션 지표이며, NWEA 공식 기구의 배포 결과지가 아님을 밝힙니다.</p>
+        <p style="font-size: 0.82rem; color: var(--muted); text-align: center;">${Honesty.escapeHTML(Honesty.REPORT_FOOTER)}</p>
       </div>
     </div>
   `;
@@ -1534,7 +1528,7 @@ function renderCohortTroubleSpots(students, history) {
         <h3>캠프 교사용 Trouble Spots</h3>
         <p>시뮬레이터 코호트 오답 집계 · ${escapeHTML(dateLabel)}</p>
       </div>
-      <p class="trouble-meta">범위: ${escapeHTML(scopeLabel)} · 등록 학생 ${cohortStudents.length}명 · attempt ${attempts.length}건 · 오답 ${misses.length}문항. 우리 뱅크/로그만 사용. 공식 NWEA 표 아님.</p>
+      <p class="trouble-meta">범위: ${escapeHTML(scopeLabel)} · 등록 학생 ${cohortStudents.length}명 · attempt ${attempts.length}건 · 오답 ${misses.length}문항. ${escapeHTML(Honesty.TROUBLE_META_NOTE)}</p>
       <div class="trouble-grid">
         <div class="table-wrap" style="margin: 0;">
           <table>
@@ -1549,7 +1543,7 @@ function renderCohortTroubleSpots(students, history) {
           </table>
         </div>
       </div>
-      <p class="trouble-print-note">인쇄용 캠프 교사 블록입니다. StudyWise/IXL 카탈로그가 아니며, 이 시뮬레이터에 쌓인 응시 로그만 요약합니다.</p>
+      <p class="trouble-print-note">${escapeHTML(Honesty.TROUBLE_PRINT_NOTE)}</p>
     </div>
   `;
 }
@@ -1645,7 +1639,7 @@ function renderGrowthChartSVG(studentHistory, grade) {
   // Title / Legends
   svg += `
     <text x="${width / 2}" y="15" fill="#0F355C" font-size="10" font-weight="700" text-anchor="middle">
-        K-12 ${subject.toUpperCase()} RIT vs grade reference (not official NWEA percentile)
+        ${Honesty.chartTitle(subject)}
     </text>
     <rect x="350" y="215" width="10" height="6" fill="#0A4F85"/>
     <text x="365" y="221" fill="#2C3E50" font-size="8" font-weight="600">Student</text>

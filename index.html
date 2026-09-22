@@ -235,9 +235,9 @@
           <p>Rasch MLE estimated level</p>
         </div>
         <div class="metric-card" style="border-top: 4px solid var(--green);">
-          <span>시뮬레이터 퍼센타일</span>
+          <span>시뮬레이터 자체 근사 퍼센타일</span>
           <strong id="scorePercentile">0%</strong>
-          <p>자체 근사, NWEA 표 아님</p>
+          <p>the simulator's own approximate percentile. 공식 NWEA 퍼센타일 규준이 아닙니다.</p>
         </div>
         <div class="metric-card" style="border-top: 4px solid var(--amber);" style="grid-column: span 2;">
           <span>Student Core Guidance</span>
@@ -251,6 +251,12 @@
 
       <div id="practiceSummary" class="practice-summary screen-only" hidden></div>
 
+      <p class="print-only honesty-print-disclaimer">
+        Printed labels: Internal Simulator Uncertainty (내부 시뮬레이터 불확실성, not official NWEA SEM);
+        Item Uniqueness = the ratio of unique item IDs within the set (세트 내 고유 문항 ID 비율);
+        percentile = the simulator's own approximate percentile (공식 NWEA 퍼센타일 규준 아님).
+      </p>
+
       <!-- Dynamic A4 Parent Consultation Report Written In Korean -->
       <div id="parentReport"></div>
 
@@ -263,8 +269,8 @@
         <button class="nwea-btn danger" id="clearHistoryBtn">⚠️ Clear History</button>
       </div>
 
-      <p style="color: var(--muted); margin-bottom: 20px; line-height: 1.55;">
-        등록 학생의 시뮬레이터 attempt 로그만 집계합니다. 공식 NWEA 표나 외부 스킬 카탈로그가 아닙니다.
+      <p style="color: var(--muted); margin-bottom: 20px; line-height: 1.55;" id="dashboardHonestyNote">
+        등록 학생의 시뮬레이터 attempt 로그만 집계합니다. 퍼센타일은 the simulator's own approximate percentile이며 공식 NWEA 퍼센타일 규준이 아닙니다.
       </p>
 
       <div class="print-trouble-block print-container" id="cohortTroubleSpots">
@@ -305,7 +311,7 @@
                   <th>Date</th>
                   <th>Subject</th>
                   <th>RIT Rating</th>
-                  <th>Percentile</th>
+                  <th>the simulator's own approximate percentile</th>
                   <th>Accuracy</th>
                   <th>Action</th>
                 </tr>
@@ -319,6 +325,7 @@
 
   </main>
 
+  <script src="honesty.js"></script>
   <script src="data/question-bank.js"></script>
   <script src="data/grade1-closeup-bank.js"></script>
   <script src="data/grade2-3-closeup-bank.js"></script>
