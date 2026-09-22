@@ -805,6 +805,10 @@ tr:last-child td {
     display: none !important;
   }
   
+  .print-only.honesty-print-disclaimer {
+    display: block !important;
+  }
+
   /* parent report printing adjustments */
   .parent-report-card {
     border: none !important;
@@ -879,6 +883,17 @@ tr:last-child td {
   font-size: 0.78rem;
   color: var(--muted);
   margin-top: 4px;
+}
+
+.print-only {
+  display: none;
+}
+
+.honesty-print-disclaimer {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0 0 16px;
 }
 
 
